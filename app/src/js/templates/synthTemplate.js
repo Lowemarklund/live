@@ -16,15 +16,54 @@ template.innerHTML =
             <option value="1.0" label="100%">
           </datalist>
         </div>
+        <span>Carrier Gain: </span>
+        <input type="range" min="0" max="3000" step="1"
+            value="1" list="carrierGain" name="carrierGain">
+        <div class="modulationInput">
+            <span>Modulation Freq: </span>
+            <input type="range" min="1" max="1500" step="1"
+                value="750" list="modulationFreq" name="modulationFreq">
+            <span>Modulation Depth: </span>
+            <input type="range" min="0" max="1" step="0.01"
+                value="0" list="modulationDepth" name="modulationDepth">
+        </div>
+        <div class="modulationInput">
+          <span>Modulation 2 Freq: </span>
+          <input type="range" min="1" max="1500" step="1"
+              value="750" list="modulation2Freq" name="modulation2Freq">
+          <span>Modulation 2 Depth: </span>
+          <input type="range" min="0" max="1" step="0.01"
+              value="0" list="modulation2Depth" name="modulation2Depth">
+          
+        </div>
         <div class="right">
-          <span>Current waveform: </span>
+          <span>Carrier waveform: </span>
           <select name="waveform">
             <option value="sine">Sine</option>
             <option value="square" selected>Square</option>
             <option value="sawtooth">Sawtooth</option>
             <option value="triangle">Triangle</option>
           </select>
-          <span>Current octave: </span>
+          <span> Mod1 waveform: </span>
+          <select name="waveform2">
+            <option value="sine">Sine</option>
+            <option value="square" selected>Square</option>
+            <option value="sawtooth">Sawtooth</option>
+            <option value="triangle">Triangle</option>
+          </select>
+          <span> Mod2 waveform: </span>
+          <select name="waveform3">
+            <option value="sine">Sine</option>
+            <option value="square" selected>Square</option>
+            <option value="sawtooth">Sawtooth</option>
+            <option value="triangle">Triangle</option>
+          </select>
+        </div>
+        <div class="lfoFreq">
+          <span>Lfo freq: </span>
+          <input type="range" min="0" max="1" step="0.01"
+          value="1" list="lfoFreq" name="lfoFreq">
+          <span>Keyboard octave: </span>
           <select name="octave">
             <option value="1">1</option>
             <option value="2">2</option>
@@ -34,6 +73,68 @@ template.innerHTML =
             <option value="6">6</option>
             <option value="7">7</option>
           </select>
+        </div>
+        <div class="effectSettings"
+          <div class="effect" id="flanger">
+          <span>Flanger </span>
+          <br>
+          <span>Time: </span>
+          <input type="range" min="0.0" max="1.0" step="0.01"
+              value="0" list="flangerTime" name="time">
+          <br>
+          <span>Depth: </span>
+          <input type="range" min="0.0" max="1.0" step="0.01"
+              value="0" list="flangerDepth" name="depth">
+          <br>
+          <span>Speed: </span>
+          <input type="range" min="0.0" max="1.0" step="0.01"
+              value="0" list="flangerSpeed" name="speed">
+          <br>
+          <span>Feedback: </span>
+          <input type="range" min="0.0" max="1.0" step="0.01"
+              value="0" list="flangerFeedBack" name="feedback">
+          <br>
+          <span>Mix: </span>
+          <input type="range" min="0.0" max="1.0" step="0.01"
+              value="0" list="flangerMix" name="mix">
+          </div>
+
+
+
+          <div class="effect" id="tremolo">
+          <span>Tremolo </span>
+          <br>
+          <span>Depth: </span>
+          <input type="range" min="0.0" max="20" step="0.01"
+              value="0" list="tremoloDepth" name="depth">
+          <br>
+          <span>Speed: </span>
+          <input type="range" min="0.0" max="1000" step="1"
+              value="0" list="tremoloSpeed" name="speed">
+          <br>
+          <span>Mix: </span>
+          <input type="range" min="0.0" max="1.0" step="0.01"
+              value="0" list="tremoloMix" name="mix">
+          </div>   
+
+
+
+          <div class="effect" id="reverb">
+          <span>Reverb </span>
+          <br>
+          <span>time: </span>
+          <input type="range" min="0.0" max="3" step="0.01"
+              value="0" list="reverbTime" name="time">
+          <br>
+          <span>Decay: </span>
+          <input type="range" min="0.0" max="1" step="0.01"
+              value="0" list="reverbDecay" name="decay">
+          <br>
+          <span>Mix: </span>
+          <input type="range" min="0.0" max="1" step="0.01"
+              value="0" list="reverbMix" name="mix">
+          <br>
+          </div>
         </div>
     </div>
   </div>
@@ -98,12 +199,14 @@ template.innerHTML =
 
       
       .octave {
+        margin-top: 10px;
         display: inline-block;
-        padding: 0 6px 0 0;
+
       }
       
       .settingsBar {
-        margin-bottom: 20px;
+        margin-bottom: 200px;
+        margin-left: 700px;
         padding: 20px;
         font: 14px "Open Sans", "Lucida Grande", "Arial", sans-serif;
         position: flexible;
@@ -112,12 +215,12 @@ template.innerHTML =
         height: 30px;
       }
       .right {
-        margin: 10px;
-        text-align: center;
+        margin-top: 10px;
+        text-align: left;
       }
 
       .volumeInput{
-        text-align: center;
+        text-align: left;
       }
 
       .sharpKey {
@@ -140,6 +243,25 @@ template.innerHTML =
         background-color: black;
         color: white;
         margin-left: 20px;
+      }
+
+      .modulationInput{
+        text-align: left;
+      }
+
+      .lfoFreq{
+        text-align: left;
+        margin-top: 10px;
+      }
+
+      .effectSettings {
+        margin-top: 20px;
+        
+      }
+
+      .effect {
+        margin-top: 20px;
+        display: inline-block;
       }
     </style>
 </div>

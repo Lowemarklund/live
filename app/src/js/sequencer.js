@@ -175,7 +175,7 @@ class Sequencer extends window.HTMLElement {
           event.target.setAttribute('src', this._drumImages[drumTypes[nextIcon]])
           event.target.setAttribute('type', [`${nextIcon}`])
           event.target.nextSibling.innerText = '1'
-          this._trackSamples[event.target.nextSibling.nextSibling.getAttribute('row')].src = `../audio/drums/${drumTypes[0]}/1.wav`
+          this._trackSamples[event.target.nextSibling.nextSibling.getAttribute('row')].src = `/audio/drums/${drumTypes[0]}/1.wav`
           this._trackInstrument[event.target.nextSibling.nextSibling.getAttribute('row')] = drumTypes[nextIcon]
         } else {
           nextIcon = Number(event.target.getAttribute('type')) + 1
@@ -317,7 +317,7 @@ class Sequencer extends window.HTMLElement {
         } else {
           this._sequencer.style.width = '500px'
         }
-        return
+        return this._grid
       }
     }
   }

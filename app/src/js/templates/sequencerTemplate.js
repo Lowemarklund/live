@@ -12,7 +12,7 @@ template.innerHTML =
         <input class="loopLengthInput" placeholder="Enter loop length (max = 32 min = 1)"></input>
     </div>
     <div class="grid"></div>
-    <img class="pausePlayButton" type="play" src="/image/icons8-play-button-50.png" alt="pause/play icon">
+    <img class="pausePlayButton" type="play" src="/../../image/icons8-play-button-50.png" alt="pause/play icon">
     <div class="info">Click icons and numbers to change track sound</div>
     <button class="clearButton">Clear Grid</button>
     <style>

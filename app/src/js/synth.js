@@ -9,6 +9,7 @@
  'use strict'
 
  const SynthTemplate = require('./templates/synthTemplate')
+ const Pizzicato = require('./Pizzicato.js')
  const template = SynthTemplate.template
 
 /**
@@ -30,18 +31,24 @@
      this._synth = this.shadowRoot.querySelector('.synth')
      this._keyboard = this.shadowRoot.querySelector('.keyboard')
      this._newKeyboard = this.shadowRoot.querySelector('.newKeyboard')
-     this._wavePicker = this.shadowRoot.querySelector("select[name='waveform']")
+     this._carrierWavePicker = this.shadowRoot.querySelector("select[name='waveform']")
+     this._modulatorWavePicker = this.shadowRoot.querySelector("select[name='waveform2']")
+     this._modulator2WavePicker = this.shadowRoot.querySelector("select[name='waveform3']")
      this._octavePicker = this.shadowRoot.querySelector("select[name='octave']")
      this._volumeControl = this.shadowRoot.querySelector("input[name='volume']")
-     this._audioContext = new (window.AudioContext || window.webkitAudioContext)()
-     this._triggerKeys = ['Tab', '1', 'q', '2', 'w', 'e', '4', 'r', '5', 't', '6', 'y', 'u', '8', 'i', '9', 'o', 'p', '0', 'å', '´', '¨', '\u27f5', '\u21b5']
+     this._carrierGainControl = this.shadowRoot.querySelector("input[name='carrierGain']")
+     this._modulationFreqControl = this.shadowRoot.querySelector("input[name='modulationFreq']")
+     this._modulationDepthControl = this.shadowRoot.querySelector("input[name='modulationDepth']")
+     this._modulation2FreqControl = this.shadowRoot.querySelector("input[name='modulation2Freq']")
+     this._modulation2DepthControl = this.shadowRoot.querySelector("input[name='modulation2Depth']")
+     this._flangerControl = this.shadowRoot.querySelector('#flanger')
+     this._tremoloControl = this.shadowRoot.querySelector('#tremolo')
+     this._reverbControl = this.shadowRoot.querySelector('#reverb')
+     this._lfoFrequency = this.shadowRoot.querySelector("input[name='lfoFreq']")
+     this._audioContext = Pizzicato.context
+     this._out = this._audioContext.destination
+     this._effectsGainNode = this._audioContext.createGain()
      this._oscList = {}
-     this._masterGainNode = null
-     this._noteFreq = null
-     this._customWaveform = null
-     this._sineTerms = null
-     this._cosineTerms = null
-     this._sequencer = null
      this._activeNotes = {
        1: null,
        2: null,
@@ -52,6 +59,7 @@
        7: null,
        8: null
      }
+     this._triggerKeys = ['Tab', '1', 'q', '2', 'w', 'e', '4', 'r', '5', 't', '6', 'y', 'u', '8', 'i', '9', 'o', 'p', '0', 'å', '´', '¨', '\u27f5', '\u21b5']
    }
 
   /**
@@ -107,6 +115,26 @@
      this._volumeControl.addEventListener('change', () => {
        this.changeVolume()
      }, false)
+
+     this._lfoFrequency.addEventListener('change', () => {
+       this.changeLfoFreq()
+     })
+
+     this._flangerControl.onchange = (event) => {
+       this._flanger.options[event.target.name] = Number(event.target.value)
+       this.effectsRouting(false)
+     }
+
+     this._tremoloControl.onchange = (event) => {
+       this._tremolo.options[event.target.name] = Number(event.target.value)
+       this.effectsRouting(false)
+     }
+
+     this._reverbControl.onchange = (event) => {
+       this._reverb.options[event.target.name] = Number(event.target.value)
+       console.log(this._reverb)
+       this.effectsRouting(false)
+     }
 
      window.addEventListener('keydown', event => {
        if (document.activeElement !== this._sequencer) {
@@ -229,7 +257,7 @@
    setup () {
      this._noteFreq = this.createNoteTable(1)
      this._masterGainNode = this._audioContext.createGain()
-     this._masterGainNode.connect(this._audioContext.destination)
+     this._masterGainNode.connect(this._out)
      this._masterGainNode.gain.value = this._volumeControl.value
      this._noteLength = 500
 
@@ -238,6 +266,8 @@
      this._sineTerms = new Float32Array([0, 0, 1, 0, 1])
      this._cosineTerms = new Float32Array(this._sineTerms.length)
      this._customWaveform = this._audioContext.createPeriodicWave(this._cosineTerms, this._sineTerms)
+
+     this.effectsRouting(true)
    }
 
    createKey (note, octave, freq, keyIndex) {
@@ -275,21 +305,48 @@
    }
 
    playTone (freq) {
-     let osc = this._audioContext.createOscillator()
-     osc.connect(this._masterGainNode)
+     let carrier = this._audioContext.createOscillator()
+     let modulator = this._audioContext.createOscillator()
+     let modulator2 = this._audioContext.createOscillator()
+     let carrierGain = this._audioContext.createGain()
+     let modulatorGain = this._audioContext.createGain()
+     let modulator2Gain = this._audioContext.createGain()
 
-     let type = this._wavePicker.options[this._wavePicker.selectedIndex].value
+     carrierGain.gain.value = this._carrierGainControl.value
+     modulatorGain.gain.value = this._modulationDepthControl.value
+     modulator.frequency.value = this._modulationFreqControl.value
+     modulator2Gain.gain.value = this._modulation2DepthControl.value
+     modulator2.frequency.value = this._modulation2FreqControl.value
+
+      // frequency modulation routing
+     carrier.connect(carrierGain)
+     carrier.connect(this._effectsGainNode)
+     carrierGain.connect(modulator.frequency)
+     modulator.connect(modulatorGain)
+     modulatorGain.connect(this._effectsGainNode)
+     carrierGain.connect(modulator2.frequency)
+     modulator2.connect(modulator2Gain)
+     modulator2Gain.connect(this._effectsGainNode)
+
+     let type = this._carrierWavePicker.options[this._carrierWavePicker.selectedIndex].value
+     let type2 = this._modulatorWavePicker.options[this._modulatorWavePicker.selectedIndex].value
+     let type3 = this._modulator2WavePicker.options[this._modulator2WavePicker.selectedIndex].value
 
      if (type === 'custom') {
-       osc.setPeriodicWave(this._customWaveform)
+       carrier.setPeriodicWave(this._customWaveform)
      } else {
-       osc.type = type
+       carrier.type = type
+       modulator.type = type2
+       modulator2.type = type3
      }
 
-     osc.frequency.value = freq
-     osc.start()
+     carrier.frequency.value = freq
 
-     return osc
+     carrier.start()
+     modulator.start()
+     modulator2.start()
+
+     return [carrier, modulator, modulator2]
    }
 
    notePressed (keyElement, id, cell) {
@@ -330,10 +387,14 @@
 
      if (dataset && dataset['pressed']) {
        if (cellId) {
-         this._oscList[cellId].stop()
+         this._oscList[cellId].forEach(osc => {
+           osc.stop()
+         })
          delete this._oscList[cellId]
        } else {
-         this._oscList[id].stop()
+         this._oscList[id].forEach(osc => {
+           osc.stop()
+         })
          delete this._oscList[id]
        }
        delete dataset['pressed']
@@ -342,6 +403,112 @@
 
    changeVolume () {
      this._masterGainNode.gain.value = this._volumeControl.value
+   }
+
+   changeLfoFreq () {
+
+   }
+
+   effectsRouting (defaultSettings) {
+     let effectOptionObj
+     let oldReverb
+     let oldFlanger
+     let oldTremolo
+     let oldDelay
+     let oldRingModulator
+
+     if (this._analyser) {
+       oldReverb = this._reverb
+       oldFlanger = this._flanger
+       oldTremolo = this._tremolo
+       oldDelay = this._delay
+       oldRingModulator = this._delay
+     }
+
+     if (defaultSettings === false) {
+       effectOptionObj = {
+         flanger: this._flanger.options,
+         delay: this._delay.options,
+         reverb: this._reverb.options,
+         tremolo: this._tremolo.options,
+         ringmodulator: this._ringModulator.options
+       }
+     }
+     if (defaultSettings === true) {
+       effectOptionObj = {
+         delay: {
+           feedback: 0,
+           time: 0,
+           mix: 0
+         },
+         flanger: {
+           time: 0,
+           speed: 0,
+           depth: 0,
+           feedback: 0,
+           mix: 0
+         },
+         reverb: {
+           time: 0,
+           decay: 0,
+           reverse: false,
+           mix: 0
+         },
+         tremolo: {
+           speed: 0,
+           depth: 0,
+           mix: 0
+         },
+         ringmodulator:
+         {
+           speed: 0,
+           distortion: 0,
+           mix: 0
+         }
+       }
+     }
+
+     this._effectsGainNode.gain.value = 1
+
+     this._analyser = this._audioContext.createAnalyser()
+
+     this._delay = new Pizzicato.Effects.Delay(effectOptionObj.delay)
+
+     this._flanger = new Pizzicato.Effects.Flanger(effectOptionObj.flanger)
+
+     this._reverb = new Pizzicato.Effects.Reverb(effectOptionObj.reverb)
+
+     this._tremolo = new Pizzicato.Effects.Tremolo(effectOptionObj.tremolo)
+
+     this._lowPassFilter = new Pizzicato.Effects.LowPassFilter({
+       frequency: 0,
+       peak: 0
+     })
+
+     this._highPassFilter = new Pizzicato.Effects.HighPassFilter({
+       frequency: 0,
+       peak: 0
+     })
+
+     this._ringModulator = new Pizzicato.Effects.RingModulator(effectOptionObj.ringmodulator)
+
+     this._effectsGainNode.connect(this._flanger)
+     this._flanger.connect(this._tremolo)
+     this._tremolo.connect(this._ringModulator)
+     this._ringModulator.connect(this._delay)
+   // this._lowPassFilter.connect(this._highPassFilter)
+   // this._highPassFilter.connect(this._delay)
+     this._delay.connect(this._reverb)
+     this._reverb.connect(this._analyser)
+     this._analyser.connect(this._masterGainNode)
+
+     if (oldReverb !== undefined) {
+       oldReverb.disconnect()
+       oldFlanger.disconnect()
+       oldDelay.disconnect()
+       oldRingModulator.disconnect()
+       oldTremolo.disconnect()
+     }
    }
 }
 
